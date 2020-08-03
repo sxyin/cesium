@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>演变</title>
+    <script src="./Cesium/Cesium.js"></script>
+    <link rel="stylesheet" href="./Cesium/Widgets/widgets.css">
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <style>
+        html, body, #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #menu {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            z-index: 999;
+        }
+        #option{
+            position: absolute;
+            top: 20px;
+            left: 900px;
+            width: 200px;
+            z-index: 999;
+            background-color: #444444;
+            color: white;
+            text-align:center;
+            display: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+<div id="menu">
+    <p>
+        <button id="select-server">选择服务</button>
+    </p>
+    <p>
+        <button id="select-layer">选择图层</button>
+    </p>
+    <p>
+        <button id="show-server">展示服务</button>
+    </p>
+</div>
+<div id="cesiumContainer"></div>
+<div id="option"></div>
+<script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNTQ0MDNjZi0xMDUwLTQxMzQtYjUyMi1mY2Q3MGYyZDc0Y2IiLCJpZCI6MTEzODQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTg3NzAyNjl9.vTFyYjYe2oHh2uzaGNx4iA_vcbnbNGC-yfn5uXT5098';
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+        terrainProvider: Cesium.createWorldTerrain(),
+        animation: false,
+        creditsDisplay: false,
+        timeline: false,
+        selectionIndicator: false,
+        infoBox: false,
+        fullscreenButton: false,    //是否显示全屏控件
+    });
+    var url; //用于存储服务地址
+    var index = 0;
+    var alllayers = []; //用于记录服务中的图层名称
+    var showlayers = []; //用于显示图层
+
+    viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(113.52, 22.3, 80000),
+    })
+
+    $("#select-server").on("click", function () {
+        url = "http://106.52.244.12:6083/arcgis/rest/services/zh/珠海三线/MapServer";
+        $.get(
+            url,
+            function (response) {
+                $(response).find("li>a").each(function(i){
+                    alllayers.push($(this)[0].text);
+                })
+            }
+        )
+        console.log(alllayers);
+    });
+
+    $("#select-layer").on("click", function () {
+        for (each in alllayers){
+            showlayers[each] = viewer.imageryLayers.addImageryProvider(new Cesium.ArcGisMapServerImageryProvider({
+                url : url,
+                enablePickFeatures : true,
+                layers : each
+            }))
+            // showlayers[each].alpha = 0;
+        }
+        console.log("服务加载完毕！");
+    });
+
+    $("#show-server").on("click", function () {
+        var i = 0;
+        var intervalId = setInterval(function() {
+            for (each in alllayers){
+                showlayers[each].alpha = 0;
+            }
+            showlayers[i].alpha = 1;
+            i++;
+            if(i===4){
+                i=0;
+            }
+        }, 1000);
+    });
+</script>
+</body>
+</html>
